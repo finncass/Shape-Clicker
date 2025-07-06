@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Clicker Game – Seasonal Competition w/ Leaderboard</title>
+  <style>
+    /* Global */
+    body, html {
+      margin:0; padding:0;
+      font-family:Arial,sans-serif;
+      background:#f0f0f0; overflow:hidden;
+    }
+    .screen {
+      display:none;
+      position:absolute; top:0; left:0;
+      width:100vw; height:100vh;
+      background:#e8e8e8; overflow:auto;
+    }
+    .header {
+      display:flex; justify-content:space-between;
+      align-items:center; background:#ccc; padding:12px;
+    }
+    button, .backBtn { cursor:pointer; }
+
+    /* Seasonal banner */
+    #seasonalBanner {
+      display:none;
+      position:fixed; top:0; left:0;
+      width:100%; padding:10px;
+      background:orangered; color:#fff;
+      text-align:center; font-size:18px; z-index:10;
+    }
+
+    /* Leaderboard panel */
+    #leaderboard {
+      position:fixed; bottom:0; left:50%;
+      transform:translateX(-50%);
+      width:280px; background:rgba(255,255,255,0.9);
+      border:1px solid #888; padding:8px;
+      max-height:200px; overflow-y:auto;
+      font-size:14px; text-align:left; z-index:10;
+      cursor:pointer;
+    }
+    #leaderboard h3 {
+      margin:4px 0; text-align:center; font-size:16px;
+    }
+    #leaderboard ol {
+      margin:0; padding-left:20px;
+    }
+
+    /* Main Game */
+    #mainGame {
+      position:relative; width:100vw; height:100vh;
+    }
+    #gameContainer {
+      position:absolute; width:200px; height:200px;
+      top:50%; left:50%;
+      transform:translate(-50%,-50%);
+      cursor:pointer;
+    }
+    #shapeSVG {
+      position:absolute; top:0; left:0;
+      width:100%; height:100%;
+    }
+    #score {
+      position:absolute;
+      top:50%; left:50%;
+      transform:translate(-50%,-50%);
+      font-size:20px;
+      pointer-events:none;
+    }
+    @keyframes fallDown {
+      0% {opacity:1; transform:translateY(0);}
+      100% {opacity:0; transform:translateY(100vh);}
+    }
+    .falling {
+      position:absolute; font-size:18px; color:black;
+      pointer-events:none;
+      animation:fallDown 1.5s linear forwards;
+    }
+
+    /* Nav Buttons */
+    #shopBtn, #awardsBtn, #statsBtn, #reincBtn {
+      position:absolute; padding:8px 12px; font-size:14px;
+    }
+    #shopBtn   {top:20px; right:20px;}
+    #awardsBtn {top:20px; left:20px;}
+    #statsBtn  {top:20px; left:50%; transform:translateX(-50%);}
+    #reincBtn  {top:60px; left:50%; transform:translateX(-50%); display:none;}
+
+    /* Shop */
+    #shopContent {display:flex; height:calc(100vh-48px);}
+    #buildings, #upgrades {
+      flex:1; padding:12px; box-sizing:border-box;
+    }
+    #buildings {border-right:1px solid #aaa;}
+    .shopItem {
+      background:#fff; border:2px solid #888;
+      border-radius:6px; margin:8px auto;
+      padding:8px; width:80%; font-size:14px;
+      transition:background 0.3s;
+    }
+    .shopItem:hover {background:#f9f9f9;}
+    .shopItem p {margin:4px 0;}
+
+    /* Awards */
+    #awardsContent {
+      display:flex; flex-direction:column;
+      align-items:center; margin-top:20px;
+    }
+    .awardBtn {
+      width:200px; padding:10px;
+      margin:8px 0; font-size:16px; text-align:center;
+    }
+
+    /* Advancements */
+    .advRow {
+      display:flex; overflow-x:auto;
+      padding:8px; margin:8px 0;
+      border-bottom:2px solid #000;
+    }
+    .achBox {
+      flex:0 0 auto; width:120px; height:40px;
+      margin-right:8px; border:2px solid #000;
+      background:#fff; font-size:12px;
+      display:flex; align-items:center; justify-content:center;
+    }
+    .achBox.unlocked {
+      box-shadow:0 0 10px red,0 0 15px red;
+      animation:glow 1s infinite alternate;
+    }
+    @keyframes glow {
+      from {box-shadow:0 0 5px red;}
+      to   {box-shadow:0 0 15px red;}
+    }
+
+    /* Stats */
+    #statsContent p {
+      font-size:16px; margin:6px 0; line-height:1.4;
+    }
+  </style>
+</head>
+<body>
+  <div id="seasonalBanner"></div>
+  <div id="leaderboard"
+       onclick="showScreen('leaderboardScreen')">
+  </div>
+
+  <!-- Main Game -->
+  <div id="mainGame">
+    <div id="gameContainer" onclick="handleClick()">
+      <div id="shapeSVG"></div>
+      <div id="score">0.00</div>
+    </div>
+    <button id="shopBtn"   onclick="showScreen('shopScreen')">Shop</button>
+    <button id="awardsBtn" onclick="showScreen('awardsScreen')">Awards</button>
+    <button id="statsBtn"  onclick="showScreen('statsScreen')">Stats</button>
+    <button id="reincBtn"  onclick="reincarnate()">Reincarnate <span id="rmult">+0</span></button>
+  </div>
+
+  <!-- Shop Screen -->
+  <div id="shopScreen" class="screen">
+    <div class="header">
+      <h1>Shop</h1>
+      <button class="backBtn" onclick="showScreen()">Back</button>
+    </div>
+    <div id="shopContent">
+      <div id="buildings"><h2>Buildings</h2></div>
+      <div id="upgrades"><h2>Upgrades</h2></div>
+    </div>
+  </div>
+
+  <!-- Awards Screen -->
+  <div id="awardsScreen" class="screen">
+    <div class="header">
+      <h1>Awards</h1>
+      <button class="backBtn" onclick="showScreen()">Back</button>
+    </div>
+    <div id="awardsContent">
+      <button class="awardBtn" onclick="showScreen('advScreen')">Advancements</button>
+      <button class="awardBtn" onclick="alert('Achievements coming soon!')">Achievements</button>
+      <button class="awardBtn" onclick="alert('Challenges coming soon!')">Challenges</button>
+    </div>
+  </div>
+
+  <!-- Advancements Screen -->
+  <div id="advScreen" class="screen">
+    <div class="header">
+      <h1>Advancements</h1>
+      <button class="backBtn" onclick="showScreen('awardsScreen')">Back</button>
+    </div>
+    <div id="shapeAdv" class="advRow"></div>
+    <div id="clickAdv" class="advRow"></div>
+    <div id="pointsAdv" class="advRow"></div>
+    <div id="ppsAdv"   class="advRow"></div>
+  </div>
+
+  <!-- Stats Screen -->
+  <div id="statsScreen" class="screen">
+    <div class="header">
+      <h1>Stats</h1>
+      <button class="backBtn" onclick="showScreen()">Back</button>
+    </div>
+    <div id="statsContent"></div>
+  </div>
+
+  <!-- Leaderboard Screen -->
+  <div id="leaderboardScreen" class="screen">
+    <div class="header">
+      <h1>Leaderboard & Prizes</h1>
+      <button class="backBtn" onclick="showScreen('mainGame')">Back</button>
+    </div>
+    <div id="leaderboardList" style="padding:12px;font-size:16px"></div>
+  </div>
+
+  <script>
+    // State
+    let score=0, totalClicks=0, lifetimePts=0, prestige=0,
+        buildings=[0,0,0,0], buildingCost=[10,100,1700,11000],
+        upgradesBought=Array(9).fill(false),
+        upgradeCost=[100,500,1000,1000,10000,50000,5000,8750,17000],
+        mults=[1,1,1,1,1], achievements={}, permanentMult=1;
+
+    // complete numberNames up to Centillion
+    const numberNames = {
+      3:"Thousand",6:"Million",9:"Billion",12:"Trillion",15:"Quadrillion",
+      18:"Quintillion",21:"Sextillion",24:"Septillion",27:"Octillion",30:"Nonillion",
+      33:"Decillion",36:"Undecillion",39:"Duodecillion",42:"Tredecillion",
+      45:"Quattuordecillion",48:"Quindecillion",51:"Sexdecillion",54:"Septendecillion",
+      57:"Octodecillion",60:"Novemdecillion",63:"Vigintillion",66:"Unvigintillion",
+      69:"Duovigintillion",72:"Trevigintillion",75:"Quattuorvigintillion",
+      78:"Quinvigintillion",81:"Sexvigintillion",84:"Septenvigintillion",
+      87:"Octovigintillion",90:"Novemvigintillion",93:"Trigintillion",
+      96:"Untrigintillion",99:"Duotrigintillion",102:"Treotrigintillion",
+      105:"Quattuortrigintillion",108:"Quintrigintillion",111:"Sextrigintillion",
+      114:"Septentrigintillion",117:"Octotrigintillion",120:"Novemtrigintillion",
+      123:"Quadragintillion",126:"Unquadragintillion",129:"Duoquadragintillion",
+      132:"Trequadragintillion",135:"Quattuorquadragintillion",
+      138:"Quinquadragintillion",141:"Sexquadragintillion",
+      144:"Septenquadragintillion",147:"Octoquadragintillion",
+      150:"Novemquadragintillion",153:"Quinquagintillion",
+      156:"Unquinquagintillion",159:"Duoquinquagintillion",
+      162:"Trequinquagintillion",165:"Quattuorquinquagintillion",
+      168:"Quinquinquagintillion",171:"Sexquinquagintillion",
+      174:"Septenquinquagintillion",177:"Octoquinquagintillion",
+      180:"Novemquinquagintillion",183:"Sexagintillion",
+      186:"Unsexagintillion",189:"Duosexagintillion",192:"Tresexagintillion",
+      195:"Quattuorsexagintillion",198:"Quinsexagintillion",201:"Sexsexagintillion",
+      204:"Septensexagintillion",207:"Octosexagintillion",210:"Novemsexagintillion",
+      213:"Septuagintillion",216:"Unseptuagintillion",219:"Duoseptuagintillion",
+      222:"Treseptuagintillion",225:"Quattuorseptuagintillion",
+      228:"Quinseptuagintillion",231:"Sexseptuagintillion",
+      234:"Septenseptuagintillion",237:"Octoseptuagintillion",
+      240:"Novemseptuagintillion",243:"Octogintillion",246:"Unoctogintillion",
+      249:"Duooctogintillion",252:"Treoctogintillion",
+      255:"Quattuoroctogintillion",258:"Quinoctogintillion",
+      261:"Sexoctogintillion",264:"Septenoctogintillion",
+      267:"Octooctogintillion",270:"Novemoctogintillion",273:"Nonagintillion",
+      276:"Unnonagintillion",279:"Duononagintillion",282:"Trenonagintillion",
+      285:"Quattuornonagintillion",288:"Quinnonagintillion",
+      291:"Sexnonagintillion",294:"Septennonagintillion",
+      297:"Octononagintillion",300:"Novemnonagintillion",303:"Centillion"
+    };
+
+    // Seasonal
+    const summerMonths=[5,6,7], winterMonths=[11,0,1];
+    let eventClicks=0, eventBuilds=0,
+        nowMonth=new Date().getMonth(),
+        lastMonth=+localStorage.getItem('lastMonth')||0,
+        bestSummer=+localStorage.getItem('bestSummer')||0,
+        bestWinter=+localStorage.getItem('bestWinter')||0,
+        eventType = summerMonths.includes(nowMonth)?'summer'
+                  : winterMonths.includes(nowMonth)?'winter'
+                  : null;
+
+    // Show seasonal banner
+    if(eventType){
+      let txt = eventType==='summer'
+              ? 'Summer Click Contest!'
+              : 'Winter Build Contest!';
+      let b = document.getElementById('seasonalBanner');
+      b.innerText=txt; b.style.display='block';
+    }
+
+    // On load: end-of-event logic + leaderboard update + init
+    window.onload = () => {
+      // Summer end
+      if(!summerMonths.includes(nowMonth) && summerMonths.includes(lastMonth)){
+        if(eventClicks>bestSummer){
+          permanentMult*=5;
+          localStorage.setItem('bestSummer', eventClicks);
+          alert('New Summer record! +500% PPS');
+        }
+        updateLeaderboard('summer', eventClicks);
+      }
+      // Winter end
+      if(!winterMonths.includes(nowMonth) && winterMonths.includes(lastMonth)){
+        if(eventBuilds>bestWinter){
+          permanentMult*=5;
+          localStorage.setItem('bestWinter', eventBuilds);
+          alert('New Winter record! +500% PPS');
+        }
+        updateLeaderboard('winter', eventBuilds);
+      }
+      localStorage.setItem('lastMonth', nowMonth);
+      init();
+    };
+
+    function updateLeaderboard(key, val){
+      let lb = JSON.parse(localStorage.getItem(key+'Leaderboard')||'[]');
+      lb.push(val);
+      lb.sort((a,b)=>b-a);
+      lb=lb.slice(0,10);
+      localStorage.setItem(key+'Leaderboard', JSON.stringify(lb));
+    }
+
+    // Draw shape
+    function drawShape(){
+      const size=200, sw=5, r=size/2;
+      let shape=score<1e3?'circle':score<1e6?'triangle':'square',
+          cols=['grey','red','orange','yellow','green','blue','pink','magenta','violet'],
+          idx=-1;
+      if(shape==='circle' && score>=100) idx=Math.floor((score-100)/100);
+      if(shape==='triangle'&& score>=1e5)idx=Math.floor((score-1e5)/1e5);
+      if(shape==='square' && score>=1e8) idx=Math.floor((score-1e8)/1e8);
+      let color=(idx>=0&&idx<cols.length)?cols[idx]:'black',
+          svg='';
+      if(shape==='circle') svg=`<svg width="${size}" height="${size}"><circle cx="${r}" cy="${r}" r="${r-sw}" fill="white" stroke="${color}" stroke-width="${sw}"/></svg>`;
+      else if(shape==='triangle') svg=`<svg width="${size}" height="${size}"><polygon points="${r},${sw} ${sw},${size-sw} ${size-sw},${size-sw}" fill="white" stroke="${color}" stroke-width="${sw}"/></svg>`;
+      else svg=`<svg width="${size}" height="${size}"><rect x="${sw}" y="${sw}" width="${size-2*sw}" height="${size-2*sw}" fill="white" stroke="${color}" stroke-width="${sw}"/></svg>`;
+      document.getElementById('shapeSVG').innerHTML=svg;
+    }
+
+    // Click handler
+    function handleClick(){
+      let gain=1+(upgradesBought[1]?buildings[0]:0);
+      score+=gain; totalClicks++; lifetimePts+=gain;
+      if(eventType==='summer') eventClicks++;
+      updateScore(); drawShape(); renderAdv(); renderStats();
+      let f=document.createElement('div');
+      f.className='falling';
+      f.innerText='+'+gain.toFixed(2);
+      f.style.left=Math.random()*(window.innerWidth-50)+'px';
+      f.style.top='0px';
+      document.body.appendChild(f);
+      setTimeout(()=>f.remove(),1500);
+    }
+
+    // PPS & auto-income
+    function calculatePPS(){
+      let a=buildings[0]*0.1*mults[0],
+          c=buildings[1]*1*mults[1],
+          m=buildings[2]*10*mults[2],
+          ai=buildings[3]*64.7*mults[3],
+          h=upgradesBought[8]?buildings.reduce((s,n)=>s+n,0)*mults[4]:0;
+      return (a+c+m+ai+h)*permanentMult;
+    }
+    setInterval(()=>{
+      let inc=calculatePPS();
+      score+=inc; lifetimePts+=inc;
+      updateScore(); drawShape(); renderAdv(); renderStats();
+    },1000);
+
+    // Advancements
+    function renderAdv(){
+      function row(arr,id,chk){
+        let c=document.getElementById(id); c.innerHTML='';
+        arr.forEach(o=>{
+          if(chk(o)) achievements[o.key||o.label]=true;
+          let b=document.createElement('div');
+          b.className='achBox'+(achievements[o.key||o.label]?' unlocked':'');
+          b.innerText=o.label;
+          c.appendChild(b);
+        });
+      }
+      // shape
+      let cols=['Grey','Red','Orange','Yellow','Green','Blue','Pink','Magenta','Violet'],sa=[];
+      cols.forEach((n,i)=>{
+        sa.push({th:100*(i+1),label:`${n} Circle`});
+        sa.push({th:1e5*(i+1),label:`${n} Triangle`});
+        sa.push({th:1e8*(i+1),label:`${n} Square`});
+      });
+      row(sa,'shapeAdv',o=>score>=o.th);
+      // clicks
+      row([{th:1e3,key:'mc',label:'Must Click'},{th:1e6,key:'hac',label:'Human Autoclicker'}],
+          'clickAdv',o=>totalClicks>=o.th);
+      // points
+      row(Object.entries(numberNames).map(([e,n])=>({th:10**+e,label:`${n} Points`})),
+          'pointsAdv',o=>lifetimePts>=o.th);
+      // pps
+      row(Object.entries(numberNames).map(([e,n])=>({th:10**+e,label:`${n} PPS`})),
+          'ppsAdv',o=>calculatePPS()>=o.th);
+    }
+
+    // Shop
+    function renderShop(){
+      let bh='', names=['Autoclicker','Coder','Mathematician','AI Assistant'];
+      names.forEach((n,i)=>{
+        bh+=`<div class="shopItem" onclick="buyB(${i})"><p><strong>${n}</strong></p>
+             <p>Cost: ${buildingCost[i]}</p><p>Owned: ${buildings[i]}</p></div>`;
+      });
+      document.getElementById('buildings').innerHTML=bh;
+      let uh='', un=['Double Autoclickers','Better Mouse','Reliable Hire',
+                    'Milestone 1','Milestone 2','Binary Coders',
+                    'Better Collab','High Efficiency','Algebraists'];
+      un.forEach((n,i)=>{
+        uh+=`<div class="shopItem" onclick="buyU(${i})"><p><strong>${n}</strong></p>
+               <p>Cost: ${upgradeCost[i]}</p><p>${upgradesBought[i]?'Purchased':'Not Purchased'}</p></div>`;
+      });
+      document.getElementById('upgrades').innerHTML=uh;
+    }
+    function buyB(i){
+      if(score<buildingCost[i])return alert('Too poor!');
+      score-=buildingCost[i];buildings[i]++;if(eventType==='winter')eventBuilds++;
+      buildingCost[i]=Math.floor(buildingCost[i]*1.15);
+      updateScore(); renderShop(); renderStats();
+    }
+    function buyU(i){
+      if(upgradesBought[i])return alert('Already bought');
+      if(score<upgradeCost[i])return alert('Too poor!');
+      score-=upgradeCost[i];upgradesBought[i]=true;
+      let map=[0,0,1,1,1,1,2,3,4];
+      mults[map[i]]*=[2,2,1.5,2,1.5,2,1,1,1][i];
+      updateScore(); renderShop(); renderStats();
+    }
+
+    // Stats
+    function renderStats(){
+      let tb=buildings.reduce((a,n)=>a+n,0), pps=calculatePPS().toFixed(2);
+      document.getElementById('statsContent').innerHTML=
+        `<p>Points/sec: ${pps}</p>
+         <p>Lifetime: ${Math.floor(lifetimePts)}</p>
+         <p>Current: ${score.toFixed(2)}</p>
+         <p>Advancements: ${Object.keys(achievements).length}</p>
+         <p>Total Clicks: ${totalClicks}</p>
+         <p>Buildings Owned: ${tb}</p>`;
+    }
+
+    // Leaderboard Screen
+    function renderLeaderboardScreen(){
+      let key=eventType, lb=JSON.parse(localStorage.getItem(key+'Leaderboard')||'[]'),
+          title=key==='summer'?'Summer':'Winter';
+      let html=`<h3>${title} Leaderboard</h3><ol>`;
+      lb.forEach((v,i)=>{
+        let prize = i===0
+                  ? '1st: 500% PPS boost'
+                  : (i<10 ? `${i+1}th: +5 prestige × next 5 reinc.` : '');
+        html+=`<li style="margin:6px 0">${v} ${key==='summer'?'clicks':'builds'} — ${prize}</li>`;
+      });
+      html+='</ol>';
+      document.getElementById('leaderboardList').innerHTML=html;
+    }
+
+    // Navigation
+    function showScreen(id){
+      ['mainGame','shopScreen','awardsScreen','advScreen','statsScreen','leaderboardScreen']
+        .forEach(name=>{
+          document.getElementById(name).style.display=
+            (id===name)||(!id&&name==='mainGame')?'block':'none';
+        });
+      if(id==='shopScreen')   renderShop();
+      if(id==='advScreen')    renderAdv();
+      if(id==='statsScreen')  renderStats();
+      if(id==='leaderboardScreen') renderLeaderboardScreen();
+    }
+
+    // Reincarnation
+    function reincarnate(){
+      if(lifetimePts<1e6) return alert('Need 1,000,000 lifetime points');
+      let base=Math.floor(lifetimePts/1e6);
+      prestige+=base;
+      document.getElementById('rmult').innerText='+'+prestige;
+      score=totalClicks=lifetimePts=0;
+      buildings=[0,0,0,0]; buildingCost=[10,100,1700,11000];
+      upgradesBought.fill(false); mults=[1,1,1,1,1];
+      updateScore(); drawShape(); renderAdv(); renderStats();
+      showScreen(); alert('Reincarnated +' + base + ' prestige');
+    }
+
+    // Utility
+    function updateScore(){
+      document.getElementById('score').innerText=score.toFixed(2);
+      document.getElementById('reincBtn').style.display=
+        lifetimePts>=1e6?'block':'none';
+      // update bottom panel
+      let lb=document.getElementById('leaderboard');
+      lb.innerHTML='';
+      if(eventType){
+        let arr=JSON.parse(localStorage.getItem(eventType+'Leaderboard')||'[]'),
+            ti=eventType==='summer'?'Summer':'Winter';
+        let html=`<h3>${ti} Top10</h3><ol>`;
+        arr.forEach(v=>html+=`<li>${v}</li>`);
+        html+='</ol>';
+        lb.innerHTML=html;
+      }
+    }
+
+    // Init
+    function init(){
+      drawShape(); renderShop(); renderAdv(); renderStats();
+      showScreen(); // show mainGame + panel
+    }
+  </script>
+</body>
+</html>
+```
