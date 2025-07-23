@@ -2,8 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8"/>
-  <meta name="viewport"
-        content="width=device-width,initial-scale=1"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>Shape Clicker – Full Release</title>
   <style>
     body, html {
@@ -12,13 +11,14 @@
       font-family: Arial, sans-serif;
       background: #f0f0f0;
       overflow: hidden;
+      transition: background 0.3s;
     }
     .screen {
       display: none;
       position: absolute;
       top: 0; left: 0;
       width: 100vw; height: 100vh;
-      background: #e8e8e8;
+      background: inherit;
       overflow: auto;
     }
     .header {
@@ -29,45 +29,10 @@
       padding: 12px;
     }
     button, .backBtn { cursor: pointer; }
-    #seasonalBanner {
-      display: none;
-      position: fixed;
-      top: 0; left: 0;
-      width: 100%;
-      padding: 10px;
-      background: orangered;
-      color: white;
-      text-align: center;
-      font-size: 18px;
-      z-index: 10;
-    }
-    #leaderboard {
-      position: fixed;
-      bottom: 0; left: 50%;
-      transform: translateX(-50%);
-      width: 280px;
-      background: rgba(255,255,255,0.9);
-      border: 1px solid #888;
-      padding: 8px;
-      max-height: 200px;
-      overflow-y: auto;
-      font-size: 14px;
-      text-align: left;
-      z-index: 10;
-      cursor: pointer;
-    }
-    #leaderboard h3 {
-      margin: 4px 0;
-      text-align: center;
-      font-size: 16px;
-    }
-    #leaderboard ol {
-      margin: 0;
-      padding-left: 20px;
-    }
     #mainGame {
       position: relative;
       width: 100vw; height: 100vh;
+      background: inherit;
     }
     #gameContainer {
       position: absolute;
@@ -75,6 +40,7 @@
       transform: translate(-50%, -50%);
       width: 200px; height: 200px;
       cursor: pointer;
+      z-index: 1;
     }
     #shapeSVG {
       position: absolute;
@@ -89,30 +55,29 @@
       pointer-events: none;
     }
     @keyframes fallDown {
-      from { opacity: 1; transform: translate(-50%, -50%); }
-      to   { opacity: 0; transform: translate(-50%, 150px); }
+      from { opacity: 1; transform: translateY(-10px);}
+      to   { opacity: 0; transform: translateY(100vh);}
     }
     .falling {
-      position: absolute;
+      position: fixed;
+      left: 50%;
+      z-index: 10000;
       font-size: 18px;
       color: black;
       pointer-events: none;
-      left: 50%;
-      top: 50%;
-      transform: translate(-50%, -50%);
       animation: fallDown 1.5s linear forwards;
-      z-index: 2;
     }
-    #shopBtn, #awardsBtn, #statsBtn, #reincBtn, #settingsBtn {
+    #shopBtn, #awardsBtn, #statsBtn, #settingsBtn, #reincBtn {
       position: absolute;
       padding: 8px 12px;
       font-size: 14px;
+      z-index: 2;
     }
     #shopBtn   { top: 20px; right: 20px; }
-    #awardsBtn { top: 20px; left: 20px; }
-    #statsBtn  { top: 20px; left: 50%; transform: translateX(-50%); }
-    #reincBtn  { top: 60px; left: 50%; transform: translateX(-50%); display: none; }
-    #settingsBtn { top: 100px; right: 20px; }
+    #statsBtn  { top: 20px; left: 20px; }
+    #settingsBtn { top: 20px; left: 50%; transform: translateX(-50%); }
+    #awardsBtn { top: 70px; left: 50%; transform: translateX(-50%); }
+    #reincBtn  { top: 120px; left: 50%; transform: translateX(-50%); display: none; }
     #shopContent {
       display: flex;
       height: calc(100vh - 48px);
@@ -137,164 +102,252 @@
     .shopItem p { margin: 4px 0; }
     .advRow {
       display: flex;
+      flex-direction: row;
+      gap: 7px;
       overflow-x: auto;
+      overflow-y: hidden;
       padding: 8px;
       margin: 8px 0;
       border-bottom: 2px solid #000;
+      min-height: 40px;
+      max-width: 100vw;
+      scrollbar-color: #888 #eee;
+      scrollbar-width: thin;
     }
     .achBox {
       flex: 0 0 auto;
-      width: 120px; height: 40px;
-      margin-right: 8px;
+      width: 210px;
+      min-width: 120px;
+      height: 54px;
       border: 2px solid #000;
       background: white;
-      font-size: 12px;
+      font-size: 18px;
       display: flex;
       align-items: center;
       justify-content: center;
+      text-align: center;
+      border-radius: 13px;
+      transition: box-shadow 0.2s;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      margin-bottom: 2px;
+      font-weight: 500;
+      box-sizing: border-box;
+      padding: 0 12px;
     }
     .achBox.unlocked {
-      box-shadow: 0 0 10px red, 0 0 15px red;
-      animation: glow 1s infinite alternate;
+      box-shadow: 0 0 12px #00c800, 0 0 18px #00b900;
+      border-color: #0c0;
+      font-weight: bold;
+      color: #070;
     }
-    @keyframes glow {
-      from { box-shadow: 0 0 5px red; }
-      to   { box-shadow: 0 0 15px red; }
+    #achievementsContent {
+      display: flex;
+      flex-direction: row;
+      gap: 16px;
+      overflow-x: auto;
+      overflow-y: hidden;
+      padding: 18px 15px;
+      margin: 24px 0 0 0;
+      border-bottom: 2px solid #000;
+      min-height: 70px;
+      max-width: 100vw;
+      scrollbar-color: #888 #eee;
+      scrollbar-width: thin;
+      background: inherit;
+    }
+    #challengesContent {
+      position: relative;
+      width: 100vw;
+      height: 270px;
+      margin-top: 40px;
+    }
+    .challBox {
+      position: absolute;
+      width: 170px; height: 38px;
+      border: 2px solid #444;
+      border-radius: 7px;
+      background: white;
+      text-align: center;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: box-shadow 0.2s;
+    }
+    .challBox.unlocked {
+      border-color: royalblue;
+      box-shadow: 0 0 8px royalblue;
+      font-weight: bold;
+      color: #154295;
+    }
+    .challBox.speed1 { left: 18%; top: 30px;}
+    .challBox.speed2 { left: 50%; top: 30px; transform: translateX(-50%);}
+    .challBox.speed3 { right: 18%; top: 30px;}
+    .challBox.shapebonanza { left: 50%; top: 120px; transform: translateX(-50%);}
+    #challengeLines {
+      position: absolute;
+      left: 0; top: 0;
+      width: 100vw; height: 270px;
+      pointer-events: none;
+      z-index: 0;
     }
     #statsContent p {
       font-size: 16px;
       margin: 6px 0;
       line-height: 1.4;
     }
-    #achievementsContent {
-      position: relative;
-      height: 100px;
+    #awardsContent {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-top: 35px;
+      gap: 28px;
     }
-    .achBox.youPlayed {
-      position: absolute;
-      top: 20px; left: 50%;
-      transform: translateX(-50%);
-    }
-    .achBox.bonus1 {
-      position: absolute;
-      top: 20px; left: 20%;
-      transform: translateX(-50%);
-    }
-    .achBox.bonus10 {
-      position: absolute;
-      top: 20px; left: 50%;
-      transform: translateX(-50%);
-    }
-    .achBox.bonus100 {
-      position: absolute;
-      top: 20px; left: 80%;
-      transform: translateX(-50%);
-    }
-    #challengesContent {
-      position: relative;
-      height: 140px;
-    }
-    .challBox {
-      position: absolute;
-      top: 50%;
-      transform: translateY(-50%);
+    .awardBtn {
       width: 180px;
-      padding: 12px;
-      border: 2px solid #444;
-      border-radius: 6px;
-      background: white;
-      text-align: center;
-      font-size: 14px;
+      padding: 16px 0;
+      font-size: 18px;
+      border-radius: 7px;
+      border: 2px solid #888;
+      background: #f8f8f8;
+      margin: 0;
+      cursor: pointer;
+      transition: background 0.2s, box-shadow 0.2s;
+      box-shadow: 0 1px 4px #ddd;
     }
-    .challBox.speedPoints1 { left: 10%; }
-    .challBox.speedPoints2 { left: 45%; }
-    .challBox.speedPoints3 { left: 80%; }
-    .challBox.speedPoints2::before,
-    .challBox.speedPoints2::after {
-      content: "";
-      position: absolute;
-      top: 50%;
-      height: 2px;
-      background: #000;
+    .awardBtn:hover { background: #e0e0e0; }
+    #settingsScreen .settingsContent {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 32px;
+      margin-top: 45px;
     }
-    .challBox.speedPoints2::before { left: -35%; width: 35%; }
-    .challBox.speedPoints2::after  { right: -35%; width: 35%; }
-    .challBox.bonusShapes1000 {
-      top: 80%;
+    .settingsGroup {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+    }
+    .settingsLabel {
+      font-size: 1.15rem;
+      margin-bottom: 8px;
+    }
+    #colorPicker {
+      width: 48px;
+      height: 48px;
+      border: none;
+      outline: none;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px #ddd;
+      margin-bottom: 0.5em;
+    }
+    .toggleSwitch {
+      display: flex;
+      align-items: center;
+      font-size: 1.1rem;
+      gap: 14px;
+    }
+    .toggleSwitch input[type="checkbox"] {
+      width: 30px; height: 30px;
+      accent-color: #48b;
+    }
+    #bonusShape {
+      display: none;
+      position: fixed;
       left: 50%;
-      transform: translate(-50%, -50%);
+      top: 10%;
+      transform: translate(-50%,0);
+      width: 90px; height: 90px;
+      border-radius: 50%;
+      background: gold;
+      border: 5px solid #222;
+      box-shadow: 0 0 18px #ff0, 0 0 36px #eec400;
+      z-index: 10001;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 17px;
+      text-align: center;
+      user-select: none;
+      line-height: 90px;
+      font-weight: bold;
+      color: #222;
     }
-    #challengesScreen .header {
-      background: #e0e0e0;
-    }
-    .challBox.unlocked {
-      border-color: royalblue;
-      box-shadow: 0 0 8px royalblue;
-    }
-    #settingsScreen .header {
-      background: #d7d7d7;
-    }
-    #settingsScreen label {
-      font-size: 16px;
-    }
-    #settingsScreen select {
-      font-size: 16px;
-      margin-left: 10px;
+    @media (max-width: 600px) {
+      .achBox {
+        width: 140px;
+        font-size: 14px;
+        padding: 0 6px;
+      }
+      #achievementsContent {
+        padding: 10px 4px;
+        min-height: 48px;
+      }
     }
   </style>
 </head>
 <body>
-  <div id="seasonalBanner"></div>
-  <div id="leaderboard"
-       onclick="showScreen('leaderboardScreen')"></div>
   <div id="mainGame">
-    <div id="gameContainer"
-         onclick="handleClick()">
+    <div id="gameContainer">
       <div id="shapeSVG"></div>
       <div id="score">0.00</div>
     </div>
-    <button id="shopBtn"
-            onclick="showScreen('shopScreen')">Shop</button>
-    <button id="awardsBtn"
-            onclick="showScreen('awardsScreen')">Awards</button>
-    <button id="statsBtn"
-            onclick="showScreen('statsScreen')">Stats</button>
-    <button id="reincBtn"
-            onclick="reincarnate()">Reincarnate <span id="rmult">+0</span></button>
-    <button id="settingsBtn"
-            onclick="showScreen('settingsScreen')">Settings</button>
+    <button id="shopBtn" onclick="showScreen('shopScreen')">Shop</button>
+    <button id="statsBtn" onclick="showScreen('statsScreen')">Stats</button>
+    <button id="settingsBtn" onclick="showScreen('settingsScreen')">Settings</button>
+    <button id="awardsBtn" onclick="showScreen('awardsScreen')">Awards</button>
+    <button id="reincBtn" onclick="reincarnate()">Reincarnate <span id="rmult">+0</span></button>
   </div>
   <div id="shopScreen" class="screen">
     <div class="header">
       <h1>Shop</h1>
-      <button class="backBtn"
-              onclick="showScreen()">Back</button>
+      <button class="backBtn" onclick="showScreen()">Back</button>
     </div>
     <div id="shopContent">
       <div id="buildings"><h2>Buildings</h2></div>
       <div id="upgrades"><h2>Upgrades</h2></div>
     </div>
   </div>
+  <div id="settingsScreen" class="screen">
+    <div class="header">
+      <h1>Settings</h1>
+      <button class="backBtn" onclick="showScreen()">Back</button>
+    </div>
+    <div class="settingsContent">
+      <div class="settingsGroup">
+        <span class="settingsLabel">Background Colour:</span>
+        <input type="color" id="colorPicker" />
+      </div>
+      <div class="settingsGroup">
+        <span class="settingsLabel">Music:</span>
+        <div class="toggleSwitch">
+          <label>
+            <input type="checkbox" id="musicToggle" />
+            <span id="musicLabel">Music Off</span>
+          </label>
+        </div>
+      </div>
+    </div>
+  </div>
   <div id="awardsScreen" class="screen">
     <div class="header">
       <h1>Awards</h1>
-      <button class="backBtn"
-              onclick="showScreen()">Back</button>
+      <button class="backBtn" onclick="showScreen()">Back</button>
     </div>
     <div id="awardsContent">
-      <button class="awardBtn"
-              onclick="showScreen('advScreen')">Advancements</button>
-      <button class="awardBtn"
-              onclick="showScreen('achievementsScreen')">Achievements</button>
-      <button class="awardBtn"
-              onclick="showScreen('challengesScreen')">Challenges</button>
+      <button class="awardBtn" onclick="showScreen('advScreen')">Advancements</button>
+      <button class="awardBtn" onclick="showScreen('achievementsScreen')">Achievements</button>
+      <button class="awardBtn" onclick="showScreen('challengesScreen')">Challenges</button>
     </div>
   </div>
   <div id="advScreen" class="screen">
     <div class="header">
       <h1>Advancements</h1>
-      <button class="backBtn"
-              onclick="showScreen('awardsScreen')">Back</button>
+      <button class="backBtn" onclick="showScreen('awardsScreen')">Back</button>
     </div>
     <div id="shapeAdv" class="advRow"></div>
     <div id="clickAdv" class="advRow"></div>
@@ -304,144 +357,107 @@
   <div id="achievementsScreen" class="screen">
     <div class="header">
       <h1>Achievements</h1>
-      <button class="backBtn"
-              onclick="showScreen('awardsScreen')">Back</button>
+      <button class="backBtn" onclick="showScreen('awardsScreen')">Back</button>
     </div>
     <div id="achievementsContent"></div>
   </div>
   <div id="challengesScreen" class="screen">
     <div class="header">
       <h1>Challenges</h1>
-      <button class="backBtn"
-              onclick="showScreen('awardsScreen')">Back</button>
+      <button class="backBtn" onclick="showScreen('awardsScreen')">Back</button>
     </div>
     <div id="challengesContent"></div>
   </div>
   <div id="statsScreen" class="screen">
     <div class="header">
       <h1>Stats</h1>
-      <button class="backBtn"
-              onclick="showScreen()">Back</button>
+      <button class="backBtn" onclick="showScreen()">Back</button>
     </div>
     <div id="statsContent"></div>
   </div>
-  <div id="leaderboardScreen" class="screen">
-    <div class="header">
-      <h1>Leaderboard & Prizes</h1>
-      <button class="backBtn"
-              onclick="showScreen('mainGame')">Back</button>
-    </div>
-    <div id="leaderboardList"
-         style="padding:12px;font-size:16px;"></div>
-  </div>
-  <div id="settingsScreen" class="screen">
-    <div class="header">
-      <h1>Settings</h1>
-      <button class="backBtn" onclick="showScreen()">Back</button>
-    </div>
-    <div style="padding: 24px;">
-      <div style="margin-bottom: 24px;">
-        <label>
-          <input type="checkbox" id="musicToggle" onchange="toggleMusic()"/>
-          Music On
-        </label>
-      </div>
-      <div>
-        <label for="bgColorSelect"><strong>Background Color:</strong></label>
-        <select id="bgColorSelect" onchange="changeBgColor()">
-          <option value="#f0f0f0">Default</option>
-          <option value="#222">Dark</option>
-          <option value="#87ceeb">Sky Blue</option>
-          <option value="#ffefd5">Peach Puff</option>
-          <option value="#ffe4e1">Misty Rose</option>
-          <option value="#a0e7a0">Mint Green</option>
-        </select>
-      </div>
-    </div>
-  </div>
+  <audio id="music" loop src="https://cdn.pixabay.com/audio/2022/08/20/audio_12b23f2b08.mp3"></audio>
+  <div id="bonusShape">?</div>
   <script>
-    let score = 0,
-        totalClicks = 0,
-        lifetimePts = 0,
-        sessionPts = 0,
-        bonusClicks = 0,
-        prestige = 0,
-        buildings = [0,0,0,0],
-        buildingCost = [10,100,1700,11000],
-        upgradesBought = Array(9).fill(false),
-        upgradeCost = [100,500,1000,1000,10000,50000,5000,8750,17000],
-        mults = [1,1,1,1,1],
-        achievements = {},
-        challengesState = {},
-        permanentMult = 1,
-        gameStartTime = Date.now();
+    // --- Advancements rendering (show ALL, scrollable) ---
+    const numberNames = {
+      3:"Thousand", 6:"Million", 9:"Billion",12:"Trillion",15:"Quadrillion",
+      18:"Quintillion",21:"Sextillion",24:"Septillion",27:"Octillion",30:"Nonillion",
+      33:"Decillion",36:"Undecillion",39:"Duodecillion",42:"Tredecillion",45:"Quattuordecillion",
+      48:"Quindecillion",51:"Sexdecillion",54:"Septendecillion",57:"Octodecillion",60:"Novemdecillion",
+      63:"Vigintillion",66:"Unvigintillion",69:"Duovigintillion",72:"Trevigintillion",75:"Quattuorvigintillion",
+      78:"Quinvigintillion",81:"Sexvigintillion",84:"Septenvigintillion",87:"Octovigintillion",90:"Novemvigintillion",
+      93:"Trigintillion",96:"Untrigintillion",99:"Duotrigintillion",102:"Googol",303:"Centillion"
+    };
 
-    let musicAudio = null;
+    let score = 0,
+      totalClicks = 0,
+      lifetimePts = 0,
+      sessionPts = 0,
+      bonusClicks = 0,
+      bonusShapesClicked = 0,
+      bonusShapeNextAt = Date.now() + 10000,
+      ppsBoostTime = 0,
+      ppsBoostActive = false,
+      prestige = 0,
+      buildings = [0,0,0,0],
+      buildingCost = [10,100,1700,11000],
+      upgradesBought = Array(9).fill(false),
+      upgradeCost = [100,500,1000,1000,10000,50000,5000,8750,17000],
+      mults = [1,1,1,1,1],
+      achievements = {},
+      challengesState = {},
+      permanentMult = 1,
+      gameStartTime = Date.now();
 
     const achievementsList = [
-      { key:'youPlayed',       label:'You played!'     },
-      { key:'bonus1',          label:'Bonus Shape I'   },
-      { key:'bonus10',         label:'Bonus Shape X'   },
-      { key:'bonus100',        label:'Bonus Shape C'   }
+      { key:'played',    label:'You Played!' },
+      { key:'bonus1',    label:'Clicked 1 Bonus Shape' },
+      { key:'bonus10',   label:'Clicked 10 Bonus Shapes' },
+      { key:'bonus100',  label:'Clicked 100 Bonus Shapes' },
+      { key:'bonus1000', label:'Clicked 1000 Bonus Shapes' },
+      { key:'shape',     label:'Discovered Black Shape' },
+      { key:'expert',    label:'Expert Player' },
+      { key:'big',       label:'Big Secret Achievement!' }
     ];
-    const challengesList = [
-      { key:'speedPoints1',    label:'Speed Points 1',      th:1e6, time:10*60*1000 },
-      { key:'speedPoints2',    label:'Speed Points 2',      th:1e6, time:20*60*1000 },
-      { key:'speedPoints3',    label:'Speed Points 3',      th:1e6, time:30*60*1000 },
-      { key:'bonusShapes1000', label:'Shape Bonanza',       th:1000, time:Infinity }
-    ];
-    const numberNames = {
-      3:"Thousand", 6:"Million", 9:"Billion",12:"Trillion",
-     15:"Quadrillion",18:"Quintillion",21:"Sextillion"
-    };
-    const summerMonths = [5,6,7],
-          winterMonths = [11,0,1];
-    let eventClicks=0, eventBuilds=0,
-        nowMonth=new Date().getMonth(),
-        lastMonth=+localStorage.getItem('lastMonth')||0,
-        bestSummer=+localStorage.getItem('bestSummer')||0,
-        bestWinter=+localStorage.getItem('bestWinter')||0,
-        eventType = summerMonths.includes(nowMonth)?'summer'
-                  : winterMonths.includes(nowMonth)?'winter'
-                  : null;
 
-    if(eventType) {
-      const b = document.getElementById('seasonalBanner'),
-            txt = eventType==='summer'
-              ? 'Summer Click Contest!'
-              : 'Winter Build Contest!';
-      b.innerText=txt; b.style.display='block';
-    }
+    function renderAdv(){
+      const colors = ['Grey','Red','Orange','Yellow','Green','Blue','Pink','Magenta','Violet'];
+      const shapeAdv = [];
+      colors.forEach((c,i)=>{
+        shapeAdv.push({ th:100*(i+1),    label:`${c} Circle`   });
+        shapeAdv.push({ th:1e5*(i+1),   label:`${c} Triangle` });
+        shapeAdv.push({ th:1e8*(i+1),   label:`${c} Square`   });
+      });
+      mkRow(shapeAdv, 'shapeAdv', o=>score>=o.th);
 
-    window.onload = () => {
-      if(!summerMonths.includes(nowMonth) && summerMonths.includes(lastMonth)) {
-        if(eventClicks>bestSummer) {
-          permanentMult*=5;
-          localStorage.setItem('bestSummer', eventClicks);
-          alert('New Summer record! +500% PPS');
-        }
-        updateLeaderboard('summer', eventClicks);
+      function mkRow(arr, id, chk){
+        const cont = document.getElementById(id);
+        cont.innerHTML = '';
+        arr.forEach(o => {
+          if(chk(o)) achievements[o.key||o.label] = true;
+          const box = document.createElement('div');
+          box.className = 'achBox' +
+            (achievements[o.key||o.label] ? ' unlocked' : '');
+          box.innerText = o.label;
+          cont.appendChild(box);
+        });
       }
-      if(!winterMonths.includes(nowMonth) && winterMonths.includes(lastMonth)) {
-        if(eventBuilds>bestWinter) {
-          permanentMult*=5;
-          localStorage.setItem('bestWinter', eventBuilds);
-          alert('New Winter record! +500% PPS');
-        }
-        updateLeaderboard('winter', eventBuilds);
-      }
-      localStorage.setItem('lastMonth', nowMonth);
-      achievements.youPlayed = true;
-      init();
-    };
-
-    function updateLeaderboard(key, val) {
-      let lb = JSON.parse(localStorage.getItem(key+'Leaderboard')||'[]');
-      lb.push(val);
-      lb.sort((a,b)=>b-a);
-      localStorage.setItem(key+'Leaderboard',
-        JSON.stringify(lb.slice(0,10))
+      mkRow(
+        [
+          {th:1e3, key:'mc',  label:'Must Click'},
+          {th:1e6, key:'hac', label:'Human Auto'}
+        ],
+        'clickAdv',
+        o=>totalClicks>=o.th
       );
+      const ptsArr = Object.entries(numberNames).map(([e,n])=>({
+        th:10**+e, label:`${n} Points`
+      }));
+      mkRow( ptsArr, 'pointsAdv', o=>lifetimePts>=o.th );
+      const ppsArr = Object.entries(numberNames).map(([e,n])=>({
+        th:10**+e, label:`${n} PPS`
+      }));
+      mkRow( ppsArr, 'ppsAdv', o=>calculatePPS()>=o.th );
     }
 
     function drawShape(){
@@ -478,44 +494,46 @@
       document.getElementById('shapeSVG').innerHTML = svg;
     }
 
+    document.getElementById('gameContainer').addEventListener('click', function(e) {
+      if (!isScreen('mainGame')) return;
+      handleClick();
+    });
+    function isScreen(id) {
+      let el = document.getElementById(id);
+      return el && (el.style.display === "" || el.style.display === "block");
+    }
     function handleClick(){
-      const gain = 1 + (upgradesBought[1] ? buildings[0] : 0);
-      bonusClicks++;
-      if(bonusClicks>=1)   achievements.bonus1   = true;
-      if(bonusClicks>=10)  achievements.bonus10  = true;
-      if(bonusClicks>=100) achievements.bonus100 = true;
-      score       += gain;
-      sessionPts  += gain;
+      achievements.played = true;
+      const gain = (1 + (upgradesBought[1] ? buildings[0] : 0)) * (ppsBoostActive ? 5 : 1);
+      score += gain;
+      sessionPts += gain;
       totalClicks++;
       lifetimePts += gain;
-      if(eventType==='summer') eventClicks++;
       updateScore();
       drawShape();
       renderAdv();
       renderStats();
-
-      // Floating +gain (fall from shape center)
-      const f = document.createElement('div');
-      f.className = 'falling';
-      f.innerText = '+' + gain.toFixed(2);
-      f.style.left = '50%';
-      f.style.top = '50%';
-      f.style.transform = 'translate(-50%, -50%)';
-      document.getElementById('gameContainer').appendChild(f);
-      setTimeout(()=>f.remove(), 1500);
+      renderAchievements();
+      if (isScreen('mainGame')) {
+        const f = document.createElement('div');
+        f.className = 'falling';
+        f.innerText = '+' + gain.toFixed(2);
+        f.style.left = '50%';
+        f.style.top = '0px';
+        document.body.appendChild(f);
+        setTimeout(()=>f.remove(), 1500);
+      }
     }
 
     function calculatePPS(){
-      const a  = buildings[0]*0.1*mults[0];
-      const c  = buildings[1]*1  *mults[1];
-      const m  = buildings[2]*10 *mults[2];
-      const ai = buildings[3]*64.7*mults[3];
-      const h  = upgradesBought[8]
-               ? buildings.reduce((s,n)=>s+n,0) * mults[4]
-               : 0;
-      return (a + c + m + ai + h) * permanentMult;
+      let base = buildings[0]*0.1*mults[0] + buildings[1]*1*mults[1] + buildings[2]*10*mults[2] + buildings[3]*64.7*mults[3];
+      if(upgradesBought[8]) base += buildings.reduce((s,n)=>s+n,0) * mults[4];
+      let tot = base * permanentMult;
+      return ppsBoostActive ? tot*5 : tot;
     }
+
     setInterval(()=>{
+      if (!isScreen('mainGame')) return;
       const inc = calculatePPS();
       score       += inc;
       sessionPts  += inc;
@@ -524,48 +542,14 @@
       drawShape();
       renderAdv();
       renderStats();
+      if (ppsBoostActive) {
+        ppsBoostTime -= 1;
+        if (ppsBoostTime <= 0) {
+          ppsBoostActive = false;
+        }
+      }
     }, 1000);
 
-    function renderAdv(){
-      function mkRow(arr, id, chk){
-        const cont = document.getElementById(id);
-        cont.innerHTML = '';
-        arr.forEach(o => {
-          if(chk(o)) achievements[o.key||o.label] = true;
-          const box = document.createElement('div');
-          box.className = 'achBox' +
-            (achievements[o.key||o.label] ? ' unlocked' : '');
-          box.innerText = o.label;
-          cont.appendChild(box);
-        });
-      }
-      const colors = ['Grey','Red','Orange','Yellow','Green','Blue','Pink','Magenta','Violet'];
-      const shapeAdv = [];
-      colors.forEach((c,i)=>{
-        shapeAdv.push({ th:100*(i+1),    label:`${c} Circle`   });
-        shapeAdv.push({ th:1e5*(i+1),   label:`${c} Triangle` });
-        shapeAdv.push({ th:1e8*(i+1),   label:`${c} Square`   });
-      });
-      mkRow(shapeAdv, 'shapeAdv', o=>score>=o.th);
-      mkRow(
-        [ {th:1e3, key:'mc',  label:'Must Click'},
-          {th:1e6, key:'hac', label:'Human Autoclicker'} ],
-        'clickAdv',
-        o=>totalClicks>=o.th
-      );
-      mkRow(
-        Object.entries(numberNames).map(([e,n])=>({
-          th:10**+e, label:`${n} Points`
-        })),
-        'pointsAdv', o=>lifetimePts>=o.th
-      );
-      mkRow(
-        Object.entries(numberNames).map(([e,n])=>({
-          th:10**+e, label:`${n} PPS`
-        })),
-        'ppsAdv', o=>calculatePPS()>=o.th
-      );
-    }
     function renderShop(){
       const bnames = ['Autoclicker','Coder','Mathematician','AI Assistant'];
       document.getElementById('buildings').innerHTML =
@@ -587,6 +571,7 @@
         cost: upgradeCost[i],
         bought: upgradesBought[i]
       })).sort((a,b)=>a.cost - b.cost);
+
       document.getElementById('upgrades').innerHTML =
         ups.map(u=>
           `<div class="shopItem" onclick="buyU(${u.idx})">
@@ -597,16 +582,15 @@
         ).join('');
     }
     function buyB(i){
-      if(score < buildingCost[i]) return alert('Too poor!');
+      if(score < buildingCost[i]) { alert('Too poor!'); return; }
       score -= buildingCost[i];
       buildings[i]++;
-      if(eventType==='winter') eventBuilds++;
       buildingCost[i] = Math.floor(buildingCost[i]*1.15);
       updateScore(); renderShop(); renderStats();
     }
     function buyU(i){
-      if(upgradesBought[i]) return alert('Already bought');
-      if(score < upgradeCost[i]) return alert('Too poor!');
+      if(upgradesBought[i]) { alert('Already bought'); return; }
+      if(score < upgradeCost[i]) { alert('Too poor!'); return; }
       score -= upgradeCost[i];
       upgradesBought[i] = true;
       const map  = [0,0,1,1,1,1,2,3,4];
@@ -614,103 +598,72 @@
       mults[ map[i] ] *= mult[i];
       updateScore(); renderShop(); renderStats();
     }
+
     function renderStats(){
       const totalB = buildings.reduce((a,n)=>a+n,0),
             pps    = calculatePPS().toFixed(2);
       document.getElementById('statsContent').innerHTML = `
-        <p>Points/sec: ${pps}</p>
+        <p>Points/sec: ${pps}${ppsBoostActive ? " (5x Activated)" : ""}</p>
         <p>Lifetime: ${Math.floor(lifetimePts)}</p>
         <p>This Reincarnation: ${sessionPts.toFixed(2)}</p>
         <p>Current: ${score.toFixed(2)}</p>
         <p>Advancements: ${Object.keys(achievements).length}</p>
         <p>Total Clicks: ${totalClicks}</p>
         <p>Buildings Owned: ${totalB}</p>
+        <p>Bonus Shapes Clicked: ${bonusShapesClicked}</p>
       `;
     }
-    function renderLeaderboardScreen(){
-      const key = eventType,
-            lb  = JSON.parse(localStorage.getItem(key+'Leaderboard')||'[]'),
-            title = key==='summer'?'Summer':'Winter';
-      let html = `<h3>${title} Leaderboard</h3><ol>`;
-      lb.forEach(v=> html += `<li>${v}</li>`);
-      html += '</ol>';
-      document.getElementById('leaderboardList').innerHTML = html;
-    }
+
     function renderAchievements(){
       const c = document.getElementById('achievementsContent');
-      c.innerHTML = '';
+      c.innerHTML = "";
       achievementsList.forEach(a=>{
         const box = document.createElement('div');
-        box.className = 'achBox ' + a.key +
-                        (achievements[a.key]? ' unlocked':'');
+        box.className = 'achBox'+(achievements[a.key]? ' unlocked':'');
         box.innerText = a.label;
         c.appendChild(box);
       });
     }
+
     function renderChallenges(){
-      const c = document.getElementById('challengesContent'),
-            now = Date.now();
-      c.innerHTML = '';
-      challengesList.forEach(ch => {
-        let unlocked = !!challengesState[ch.key];
-        if(!unlocked &&
-           sessionPts >= ch.th &&
-           (now - gameStartTime) <= ch.time) {
-          unlocked = true;
-          challengesState[ch.key] = true;
-        }
-        const box = document.createElement('div');
-        box.className = 'challBox ' + ch.key +
-                        (unlocked? ' unlocked':'');
-        box.innerHTML = `
-          <strong>${ch.label}</strong><br>
-          ${(ch.th/1e6).toFixed(0)}M pts in
-          ${(ch.time===Infinity)? '∞': ch.time/60000} min
-        `;
-        c.appendChild(box);
-      });
-    }
-    function initMusic() {
-      if (!musicAudio) {
-        musicAudio = new Audio("https://cdn.pixabay.com/audio/2022/10/16/audio_12c8f0cd2b.mp3");
-        musicAudio.loop = true;
-        musicAudio.volume = 0.4;
+      const c = document.getElementById('challengesContent');
+      c.innerHTML = `
+        <svg id="challengeLines"></svg>
+        <div class="challBox speed1" id="speed1">Speed Points 1</div>
+        <div class="challBox speed2" id="speed2">Speed Points 2</div>
+        <div class="challBox speed3" id="speed3">Speed Points 3</div>
+        <div class="challBox shapebonanza" id="shapebonanza">Shape Bonanza</div>
+      `;
+      if(challengesState.speedPoints1) c.querySelector("#speed1").classList.add("unlocked");
+      if(challengesState.speedPoints2) c.querySelector("#speed2").classList.add("unlocked");
+      if(challengesState.speedPoints3) c.querySelector("#speed3").classList.add("unlocked");
+      if(challengesState.bonusShapes1000) c.querySelector("#shapebonanza").classList.add("unlocked");
+      let svg = c.querySelector("#challengeLines");
+      svg.innerHTML = "";
+      function xy(el) {
+        let rect = el.getBoundingClientRect();
+        let parentRect = svg.getBoundingClientRect();
+        return {x: rect.left + rect.width/2 - parentRect.left, y: rect.top + rect.height/2 - parentRect.top};
       }
-      const musicOn = localStorage.getItem('musicOn') === "true";
-      document.getElementById('musicToggle').checked = musicOn;
-      if (musicOn) musicAudio.play();
-      else if (musicAudio) musicAudio.pause();
+      setTimeout(()=>{
+        let p1 = xy(c.querySelector("#speed1"));
+        let p2 = xy(c.querySelector("#speed2"));
+        let p3 = xy(c.querySelector("#speed3"));
+        let pb = xy(c.querySelector("#shapebonanza"));
+        svg.setAttribute("width", window.innerWidth);
+        svg.setAttribute("height", 270);
+        svg.innerHTML =
+          `<line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" stroke="#222" stroke-width="4"/>
+           <line x1="${p2.x}" y1="${p2.y}" x2="${p3.x}" y2="${p3.y}" stroke="#222" stroke-width="4"/>
+           <line x1="${p2.x}" y1="${p2.y}" x2="${pb.x}" y2="${pb.y}" stroke="#222" stroke-width="4"/>`;
+      }, 40);
     }
-    function toggleMusic() {
-      const on = document.getElementById('musicToggle').checked;
-      localStorage.setItem('musicOn', on);
-      if (on) {
-        musicAudio.play();
-      } else {
-        musicAudio.pause();
-      }
-    }
-    function initBgColor() {
-      const savedColor = localStorage.getItem('bgColor') || "#f0f0f0";
-      document.getElementById('bgColorSelect').value = savedColor;
-      document.body.style.background = savedColor;
-      document.querySelectorAll('.screen').forEach(
-        screen => screen.style.background = savedColor
-      );
-    }
-    function changeBgColor() {
-      const color = document.getElementById('bgColorSelect').value;
-      localStorage.setItem('bgColor', color);
-      document.body.style.background = color;
-      document.querySelectorAll('.screen').forEach(
-        screen => screen.style.background = color
-      );
-    }
+
     function showScreen(id){
       [
-        'mainGame','shopScreen','awardsScreen','advScreen',
+        'mainGame','shopScreen','settingsScreen','awardsScreen','advScreen',
         'achievementsScreen','challengesScreen',
-        'statsScreen','leaderboardScreen','settingsScreen'
+        'statsScreen'
       ].forEach(name => {
         document.getElementById(name).style.display =
           (id===name || (!id && name==='mainGame'))
@@ -719,12 +672,10 @@
       if(id==='shopScreen')         renderShop();
       if(id==='advScreen')          renderAdv();
       if(id==='statsScreen')        renderStats();
-      if(id==='leaderboardScreen')  renderLeaderboardScreen();
       if(id==='achievementsScreen') renderAchievements();
       if(id==='challengesScreen')   renderChallenges();
-      if(id==='settingsScreen')     { initMusic(); initBgColor(); }
-      if(!id || id==='mainGame')    updateScore();
     }
+
     function reincarnate(){
       if(lifetimePts < 1e6)
         return alert('Need 1,000,000 lifetime points');
@@ -740,29 +691,100 @@
       showScreen();
       alert('Reincarnated +' + base + ' prestige');
     }
+
     function updateScore(){
       document.getElementById('score').innerText = score.toFixed(2);
       document.getElementById('reincBtn').style.display =
         (lifetimePts>=1e6) ? 'block' : 'none';
-      const panel = document.getElementById('leaderboard');
-      panel.innerHTML = '';
-      if(eventType){
-        let arr = JSON.parse(localStorage.getItem(eventType+'Leaderboard')||'[]'),
-            ti  = eventType==='summer'?'Summer':'Winter';
-        let html = `<h3>${ti} Top10</h3><ol>`;
-        arr.forEach(v=> html+=`<li>${v}</li>`);
-        panel.innerHTML = html + '</ol>';
+    }
+
+    function setupSettings() {
+      const colorPicker = document.getElementById('colorPicker');
+      let savedColor = localStorage.getItem('bgColor') || '#f0f0f0';
+      colorPicker.value = savedColor;
+      updateBG(savedColor);
+      colorPicker.addEventListener('input', function() {
+        updateBG(colorPicker.value);
+        localStorage.setItem('bgColor', colorPicker.value);
+      });
+      function updateBG(col) {
+        document.body.style.backgroundColor = col;
+        document.querySelectorAll('.screen').forEach(e=>e.style.background=col);
+      }
+      const music = document.getElementById('music');
+      const musicToggle = document.getElementById('musicToggle');
+      const musicLabel = document.getElementById('musicLabel');
+      let musicPref = localStorage.getItem('musicOn') === 'true';
+      musicToggle.checked = musicPref;
+      updateMusic();
+      musicToggle.addEventListener('change', function() {
+        localStorage.setItem('musicOn', musicToggle.checked ? 'true' : 'false');
+        updateMusic();
+      });
+      function updateMusic() {
+        if (musicToggle.checked) {
+          music.volume = 0.3;
+          music.play();
+          musicLabel.textContent = "Music On";
+        } else {
+          music.pause();
+          musicLabel.textContent = "Music Off";
+        }
       }
     }
+
+    function showBonusShape() {
+      let el = document.getElementById('bonusShape');
+      el.style.display = 'flex';
+      el.innerText = "BONUS";
+    }
+    function hideBonusShape() {
+      document.getElementById('bonusShape').style.display = 'none';
+    }
+    function scheduleBonusShape() {
+      let t = 7500 + Math.random()*2500;
+      bonusShapeNextAt = Date.now() + t*1000;
+      setTimeout(()=>{
+        if(isScreen('mainGame')) showBonusShape();
+        setTimeout(hideBonusShape, 10000);
+        scheduleBonusShape();
+      }, t*1000);
+    }
+    document.getElementById('bonusShape').onclick = function(e) {
+      e.stopPropagation();
+      hideBonusShape();
+      bonusShapesClicked++;
+      if (bonusShapesClicked>=1) achievements.bonus1 = true;
+      if (bonusShapesClicked>=10) achievements.bonus10 = true;
+      if (bonusShapesClicked>=100) achievements.bonus100 = true;
+      if (bonusShapesClicked>=1000) achievements.bonus1000 = true;
+      if (Math.random()<0.1) {
+        score += 1000000;
+        achievements.shape = true;
+        alert("Lucky! You got the next black shape!");
+      } else if (Math.random()<0.5) {
+        ppsBoostActive = true;
+        ppsBoostTime = 120;
+        alert("5x PPS boost for 2 minutes!");
+      } else {
+        score += 200 + Math.random()*100;
+        alert("Bonus points!");
+      }
+      updateScore(); renderAchievements(); renderChallenges();
+    };
+
     function init(){
       drawShape();
       renderShop();
       renderAdv();
       renderStats();
-      initMusic();
-      initBgColor();
+      setupSettings();
+      renderAchievements();
+      renderChallenges();
       showScreen();
+      scheduleBonusShape();
     }
+    window.onload = init;
   </script>
 </body>
 </html>
